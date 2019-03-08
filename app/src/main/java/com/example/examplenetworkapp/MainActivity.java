@@ -1,5 +1,6 @@
 package com.example.examplenetworkapp;
 
+import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,34 +27,51 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+        //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        //StrictMode.setThreadPolicy(policy);
     }
 
     public void onClick(View v){
-        try{
-            URL url = new URL("http://sandbox.kriswelsh.com/hygieneapi/hygiene.php?op=search_postcode&postcode=SW1A+1AA");
-            URLConnection tc = url.openConnection();
-            InputStreamReader isr = new InputStreamReader(tc.getInputStream());
-            BufferedReader in = new BufferedReader(isr);
+        new GetDataClass().execute("http://sandbox.kriswelsh.com/hygieneapi/hygiene.php?op=search_postcode&postcode=WA15+7UR");
+    }
 
-            String line;
-            while((line = in.readLine()) != null){
-                JSONArray ja = new JSONArray(line);
-                for(int i=0;i<ja.length();i++){
-                    JSONObject jo = (JSONObject) ja.get(i);
-                    listItems.add(jo.getString("BusinessName"));
+    private class GetDataClass extends AsyncTask<String, Integer, String>{
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try{
+                URL url = new URL(strings[0]);
+                URLConnection tc = url.openConnection();
+                InputStreamReader isr = new InputStreamReader(tc.getInputStream());
+                BufferedReader in = new BufferedReader(isr);
+
+                String line;
+                while((line = in.readLine()) != null){
+                    JSONArray ja = new JSONArray(line);
+                    for(int i=0;i<ja.length();i++){
+                        JSONObject jo = (JSONObject) ja.get(i);
+                        listItems.add(jo.getString("BusinessName"));
+                        listItems.add(jo.getString("RatingValue"));
+                    }
                 }
-            }
-            textView = findViewById(R.id.dump);
-            StringBuilder string = new StringBuilder();
-            for(String s: listItems){
-                string.append(s);
-            }
-            textView.setText(string.toString() + "\n");
+                textView = findViewById(R.id.dump);
+                StringBuilder string = new StringBuilder();
+                for(String s: listItems){
+                    string.append(s);
+                }
+                //textView.setText(string.toString() + "\n");
 
-        } catch (Exception e){
-            e.printStackTrace();
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+
+            return listItems.toString();
+        }
+
+        @Override
+        protected void onPostExecute(String string) {
+            textView.findViewById(R.id.dump);
+            textView.setText(string);
         }
     }
 }
